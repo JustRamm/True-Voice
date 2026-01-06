@@ -12,6 +12,7 @@ final ttsServiceProvider = Provider<TtsService>((ref) {
 class TtsState {
   final bool isLoading;
   final PlatformFile? referenceAudio;
+  final String? selectedVoiceId;
   final double speed;
   final double intensity;
   final String? errorMessage;
@@ -19,6 +20,7 @@ class TtsState {
   TtsState({
     this.isLoading = false,
     this.referenceAudio,
+    this.selectedVoiceId,
     this.speed = 1.0,
     this.intensity = 0.5,
     this.errorMessage,
@@ -27,6 +29,7 @@ class TtsState {
   TtsState copyWith({
     bool? isLoading,
     PlatformFile? referenceAudio,
+    String? selectedVoiceId,
     double? speed,
     double? intensity,
     String? errorMessage,
@@ -34,6 +37,7 @@ class TtsState {
     return TtsState(
       isLoading: isLoading ?? this.isLoading,
       referenceAudio: referenceAudio ?? this.referenceAudio,
+      selectedVoiceId: selectedVoiceId ?? this.selectedVoiceId,
       speed: speed ?? this.speed,
       intensity: intensity ?? this.intensity,
       errorMessage: errorMessage,
@@ -56,7 +60,11 @@ class TtsController extends StateNotifier<TtsState> {
   }
 
   void setReferenceAudio(PlatformFile file) {
-    state = state.copyWith(referenceAudio: file);
+    state = state.copyWith(referenceAudio: file, selectedVoiceId: null);
+  }
+
+  void setSelectedVoiceId(String? voiceId) {
+    state = state.copyWith(selectedVoiceId: voiceId, referenceAudio: null);
   }
 
   void setLoading(bool loading) {

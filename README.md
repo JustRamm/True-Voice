@@ -34,18 +34,26 @@ True Voice is a premium AI-powered Voice Synthesis and Cloning application built
    cd True-Voice
    ```
 
-2. **Install dependencies:**
+2. **Backend Setup (Python):**
    ```bash
-   flutter pub get
+   cd backend
+   # Create a virtual environment
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Install dependencies
+   pip install -r requirements.txt
+   
+   # Run the server
+   python main.py
    ```
 
-3. **Run the application:**
+3. **Frontend Setup (Flutter):**
    ```bash
-   # For Chrome
+   # Go back to root
+   cd ..
+   flutter pub get
    flutter run -d chrome
-
-   # For Mobile
-   flutter run
    ```
 
 ## 🛠️ Project Structure

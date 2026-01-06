@@ -20,7 +20,8 @@ class TtsService {
 
   Future<Uint8List?> synthesizeSpeech({
     required String text,
-    required PlatformFile referenceAudio,
+    PlatformFile? referenceAudio,
+    String? voiceId,
     required double speed,
     required double intensity,
   }) async {
@@ -33,42 +34,39 @@ class TtsService {
       request.fields['text'] = text;
       request.fields['speed'] = speed.toString();
       request.fields['intensity'] = intensity.toString();
-
-      // Add file
-      if (kIsWeb) {
-        if (referenceAudio.bytes != null) {
-           request.files.add(http.MultipartFile.fromBytes(
-            'reference_audio',
-            referenceAudio.bytes!,
-            filename: referenceAudio.name,
-          ));
-        } else {
-             _logger.e('Audio bytes missing on web');
-             throw Exception('Audio bytes missing on web selection');
-        }
-      } else {
-        // Mobile/Desktop
-        if (referenceAudio.path != null) {
-          var audioFile = await http.MultipartFile.fromPath(
-            'reference_audio',
-            referenceAudio.path!,
-          );
-          request.files.add(audioFile);
-        } else {
-             // Fallback to bytes if path is null for some reason
-             if (referenceAudio.bytes != null) {
-                  request.files.add(http.MultipartFile.fromBytes(
-                  'reference_audio',
-                  referenceAudio.bytes!,
-                  filename: referenceAudio.name,
-                ));
-             } else {
-                  throw Exception('Audio file path and bytes are missing');
-             }
-        }
+      if (voiceId != null) {
+        request.fields['voice_id'] = voiceId;
       }
-
-      _logger.i('Sending TTS request: "$text" with speed $speed, intensity $intensity');
+ 
+      // Add file if provided
+      if (referenceAudio != null) {
+        if (kIsWeb) {
+          if (referenceAudio.bytes != null) {
+             request.files.add(http.MultipartFile.fromBytes(
+              'reference_audio',
+              referenceAudio.bytes!,
+              filename: referenceAudio.name,
+            ));
+          }
+        } else {
+          if (referenceAudio.path != null) {
+            request.files.add(await http.MultipartFile.fromPath(
+              'reference_audio',
+              referenceAudio.path!,
+            ));
+          } else if (referenceAudio.bytes != null) {
+             request.files.add(http.MultipartFile.fromBytes(
+                'reference_audio',
+                referenceAudio.bytes!,
+                filename: referenceAudio.name,
+              ));
+          }
+        }
+      } else if (voiceId == null) {
+          throw Exception('Either reference audio or a voice ID must be provided');
+      }
+ 
+      _logger.i('Sending TTS request: "$text" | Voice: ${voiceId ?? "Custom"}');
       
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);

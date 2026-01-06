@@ -58,8 +58,8 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
     final state = ref.read(ttsControllerProvider);
     final notifier = ref.read(ttsControllerProvider.notifier);
     
-    if (state.referenceAudio == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a Reference Audio file first.")));
+    if (state.referenceAudio == null && state.selectedVoiceId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a Voice Profile or Demo Voice first.")));
       return;
     }
     if (_textController.text.trim().isEmpty) {
@@ -74,7 +74,8 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
       final service = ref.read(ttsServiceProvider);
       final audioBytes = await service.synthesizeSpeech(
         text: _textController.text,
-        referenceAudio: state.referenceAudio!,
+        referenceAudio: state.referenceAudio,
+        voiceId: state.selectedVoiceId,
         speed: state.speed,
         intensity: state.intensity,
       );
@@ -92,6 +93,13 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
       notifier.setLoading(false);
     }
   }
+
+  final List<Map<String, String>> _demoVoices = [
+    {"id": "sophia", "name": "Sophia", "desc": "Gentle & Warm"},
+    {"id": "ethan", "name": "Ethan", "desc": "Clear & Professional"},
+    {"id": "lily", "name": "Lily", "desc": "Cheerful & Bright"},
+    {"id": "jack", "name": "Jack", "desc": "Deep & Narrative"},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -160,8 +168,72 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
 
             const SizedBox(height: 30),
 
+            // 1.5 Demo Voices
+            _buildSectionHeader("Demo AI Voices"),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _demoVoices.length,
+                itemBuilder: (context, index) {
+                  final voice = _demoVoices[index];
+                  final isSelected = ttsState.selectedVoiceId == voice['id'];
+                  return GestureDetector(
+                    onTap: () => ref.read(ttsControllerProvider.notifier).setSelectedVoiceId(voice['id']),
+                    child: Container(
+                      width: 110,
+                      margin: const EdgeInsets.only(right: 12, bottom: 4),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF850E35) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF850E35) : const Color(0xFFFFC4C4),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFEE6983).withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.face,
+                            color: isSelected ? Colors.white : const Color(0xFF850E35),
+                            size: 28,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            voice['name']!,
+                            style: GoogleFonts.outfit(
+                              color: isSelected ? Colors.white : const Color(0xFF850E35),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            voice['desc']!,
+                            style: GoogleFonts.outfit(
+                              color: isSelected ? Colors.white70 : Colors.black38,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
             // 2. Reference Audio Picker
-             _buildSectionHeader("Voice Identity"),
+             _buildSectionHeader("Custom Voice Clone"),
              const SizedBox(height: 10),
             
             GestureDetector(
@@ -169,18 +241,24 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF850E35), // Burgundy
-                      const Color(0xFF850E35).withOpacity(0.8)
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: ttsState.referenceAudio != null
+                    ? LinearGradient(
+                        colors: [
+                          const Color(0xFF850E35), // Burgundy
+                          const Color(0xFF850E35).withOpacity(0.8)
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                  color: ttsState.referenceAudio == null ? Colors.white : null,
                   borderRadius: BorderRadius.circular(16),
+                   border: ttsState.referenceAudio == null 
+                      ? Border.all(color: const Color(0xFFFFC4C4))
+                      : null,
                    boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF850E35).withOpacity(0.3),
+                      color: const Color(0xFF850E35).withOpacity(0.1),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     )
@@ -191,12 +269,14 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
                      Container(
                        padding: const EdgeInsets.all(10),
                        decoration: BoxDecoration(
-                         color: Colors.white.withOpacity(0.2), 
+                         color: ttsState.referenceAudio != null 
+                            ? Colors.white.withOpacity(0.2)
+                            : const Color(0xFF850E35).withOpacity(0.1), 
                          borderRadius: BorderRadius.circular(12)
                        ),
                        child: Icon(
                         Icons.graphic_eq,
-                        color: ttsState.referenceAudio != null ? const Color(0xFFFFC4C4) : Colors.white,
+                        color: ttsState.referenceAudio != null ? Colors.white : const Color(0xFF850E35),
                       ),
                      ),
                     const SizedBox(width: 15),
@@ -205,19 +285,30 @@ class _VoiceSynthesisScreenState extends ConsumerState<VoiceSynthesisScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            ttsState.referenceAudio != null ? "Voice Profile Active" : "Select Voice Profile",
-                            style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
+                            ttsState.referenceAudio != null ? "Voice Profile Active" : "Clone Your Own Voice",
+                            style: GoogleFonts.outfit(
+                              color: ttsState.referenceAudio != null ? Colors.white : const Color(0xFF850E35), 
+                              fontWeight: FontWeight.bold
+                            ),
                           ),
                           if (ttsState.referenceAudio != null)
                              Text(
                               ttsState.referenceAudio!.name,
                               style: GoogleFonts.outfit(color: const Color(0xFFFFC4C4), fontSize: 12),
                               overflow: TextOverflow.ellipsis,
+                            )
+                          else
+                            Text(
+                              "Upload a 5-sec audio clip",
+                              style: GoogleFonts.outfit(color: Colors.black38, fontSize: 12),
                             ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.folder_open, color: Colors.white70),
+                    Icon(
+                      Icons.folder_open, 
+                      color: ttsState.referenceAudio != null ? Colors.white70 : const Color(0xFF850E35).withOpacity(0.4)
+                    ),
                   ],
                 ),
               ),
