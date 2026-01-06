@@ -1,0 +1,45 @@
+name: true_tone
+description: "A Voice Cloning & TTS module for the True Tone assistive project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  
+  # Networking
+  http: ^1.2.1
+  
+  # File Selection
+  file_picker: ^8.0.0
+  
+  # Audio Playback
+  audioplayers: ^6.0.0
+  
+  # Fonts
+  google_fonts: ^6.1.0
+
+  # SVG Support
+  flutter_svg: ^2.0.10
+  
+  # Utils
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.1
+  logger: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
